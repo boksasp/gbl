@@ -37,12 +37,23 @@ var rootCmd = &cobra.Command{
 	Select which branch you want to check out with the arrow keys.	
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
+		log.SetFlags(0)
+
+		// verify that gbl is run from a git repository
+		_, fileErr := os.Stat(".git")
+		if fileErr != nil {
+			log.Print("Not a git repository")
+			return
+		}
+
+		// get local branch names
 		out, err := exec.Command("git", "branch", "--list", "--format=\"%(refname)\"").Output()
 
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		// format and filter the list of branches
 		output := string(out)
 		branches := strings.Split(output, "\n")
 		filtered_branches := []string{}
@@ -55,12 +66,11 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
+		// define and run the prompt
 		searcher := func(input string, index int) bool {
 			branch := filtered_branches[index]
-
 			return strings.Contains(branch, input)
 		}
-
 		prompt := promptui.Select{
 			Label:             "Select branch to checkout",
 			Items:             filtered_branches,
@@ -76,6 +86,7 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		// attempt to checkout the selected branch
 		if result != "" {
 			err := exec.Command("git", "checkout", result).Run()
 			if err != nil {

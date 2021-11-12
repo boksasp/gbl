@@ -17,11 +17,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/spf13/cobra"
 
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/viper"
@@ -37,9 +38,11 @@ var rootCmd = &cobra.Command{
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		out, err := exec.Command("git", "branch", "--list", "--format=\"%(refname)\"").Output()
+
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		output := string(out)
 		branches := strings.Split(output, "\n")
 		filtered_branches := []string{}
@@ -52,10 +55,18 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
+		searcher := func(input string, index int) bool {
+			branch := filtered_branches[index]
+
+			return strings.Contains(branch, input)
+		}
+
 		prompt := promptui.Select{
-			Label: "Select branch to checkout",
-			Items: filtered_branches,
-			Size:  20,
+			Label:             "Select branch to checkout",
+			Items:             filtered_branches,
+			Size:              20,
+			Searcher:          searcher,
+			StartInSearchMode: true,
 		}
 
 		_, result, err := prompt.Run()
@@ -71,7 +82,6 @@ var rootCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 		}
-
 	},
 }
 

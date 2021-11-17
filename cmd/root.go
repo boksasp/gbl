@@ -60,8 +60,7 @@ var rootCmd = &cobra.Command{
 
 		for _, v := range branches {
 			if v != "" {
-				branch_parts := strings.Split(v, "/")
-				branch_name := branch_parts[len(branch_parts)-1]
+				branch_name := strings.Replace(v, "refs/heads/", "", 1)
 				filtered_branches = append(filtered_branches, strings.ReplaceAll(branch_name, "\"", ""))
 			}
 		}

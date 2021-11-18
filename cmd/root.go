@@ -47,10 +47,10 @@ var rootCmd = &cobra.Command{
 		}
 
 		// get local branch names
-		out, err := exec.Command("git", "branch", "--list", "--format=\"%(refname)\"").Output()
+		out, err := exec.Command("git", "branch", "--list", "--format=\"%(refname)\"").CombinedOutput()
 
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(string(out))
 		}
 
 		// format and filter the list of branches
@@ -87,10 +87,11 @@ var rootCmd = &cobra.Command{
 
 		// attempt to checkout the selected branch
 		if result != "" {
-			err := exec.Command("git", "checkout", result).Run()
+			out, err := exec.Command("git", "checkout", result).CombinedOutput()
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal(string(out))
 			}
+			fmt.Print(string(out))
 		}
 	},
 }

@@ -19,16 +19,72 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
-	"strings"
 
 	"github.com/spf13/cobra"
 
-	"github.com/manifoldco/promptui"
+	survey "github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
+var deleteBranch bool
+var forceDeleteBranch bool
+
+func delete(branch string) error {
+	_, err := gitBranchDelete(branch, forceDeleteBranch)
+	if err != nil {
+		log.Printf("❌ %s", branch)
+		return err
+	}
+	log.Printf("✅ %s", branch)
+	return nil
+}
+
+func deletePrompt(branches []string) {
+	prompt := &survey.MultiSelect{
+		Message: "Which branch(es) do you want to delete?",
+		Options: branches,
+	}
+	selected := []string{}
+	survey.AskOne(prompt, &selected)
+
+	if len(selected) > 0 {
+		errorMessages := []error{}
+		for _, branch := range selected {
+			err := delete(branch)
+			if err != nil {
+				errorMessages = append(errorMessages, err)
+			}
+		}
+		if len(errorMessages) > 0 {
+			for _, v := range errorMessages {
+				log.Print(v)
+			}
+		}
+	} else {
+		log.Println("No branch selected")
+	}
+}
+
+func checkoutPrompt(branches []string) {
+	prompt := &survey.Select{
+		Message: "Which branch do you want to checkout?",
+		Options: branches,
+	}
+	var selected string
+	survey.AskOne(prompt, &selected)
+
+	// attempt to checkout the selected branch
+	if selected != "" {
+		out, err := gitCheckout(selected)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(out)
+	} else {
+		log.Println("No branch selected")
+	}
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "gbl",
@@ -40,58 +96,22 @@ var rootCmd = &cobra.Command{
 		log.SetFlags(0)
 
 		// verify that gbl is run from a git repository
-		_, fileErr := os.Stat(".git")
-		if fileErr != nil {
+		_, err := os.Stat(".git")
+		if err != nil {
 			log.Print("Not a git repository")
 			return
 		}
 
-		// get local branch names
-		out, err := exec.Command("git", "branch", "--list", "--format=\"%(refname)\"").CombinedOutput()
+		branches, err := gitBranchListShort()
 
 		if err != nil {
-			log.Fatal(string(out))
+			log.Fatal(err)
 		}
 
-		// format and filter the list of branches
-		output := string(out)
-		branches := strings.Split(output, "\n")
-		filtered_branches := []string{}
-
-		for _, v := range branches {
-			if v != "" {
-				branch_name := strings.Replace(v, "refs/heads/", "", 1)
-				filtered_branches = append(filtered_branches, strings.ReplaceAll(branch_name, "\"", ""))
-			}
-		}
-
-		// define and run the prompt
-		searcher := func(input string, index int) bool {
-			branch := filtered_branches[index]
-			return strings.Contains(branch, input)
-		}
-		prompt := promptui.Select{
-			Label:             "Select branch to checkout",
-			Items:             filtered_branches,
-			Size:              20,
-			Searcher:          searcher,
-			StartInSearchMode: true,
-		}
-
-		_, result, err := prompt.Run()
-
-		if err != nil {
-			fmt.Printf("Prompt failed %v\n", err)
-			return
-		}
-
-		// attempt to checkout the selected branch
-		if result != "" {
-			out, err := exec.Command("git", "checkout", result).CombinedOutput()
-			if err != nil {
-				log.Fatal(string(out))
-			}
-			fmt.Print(string(out))
+		if deleteBranch == true || forceDeleteBranch == true {
+			deletePrompt(branches)
+		} else {
+			checkoutPrompt(branches)
 		}
 	},
 }
@@ -105,15 +125,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gbl.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().BoolVarP(&deleteBranch, "delete", "d", false, "Delete local branches (git branch -d <branch>)")
+	rootCmd.Flags().BoolVarP(&forceDeleteBranch, "force-delete", "D", false, "Force delete local branches (git branch -D <branch>)")
 }
 
 // initConfig reads in config file and ENV variables if set.

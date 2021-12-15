@@ -13,7 +13,11 @@ go install github.com/boksasp/gbl@latest
 ## Using gbl
 In a directory containing a git repository, run `gbl` in the terminal to get a list of all the branches you have locally, and press 'enter' to select the one you want to checkout.
 
-<img src="docs/img/gbl" alt="Showing terminal output of running gbl command without flags" width="200"/>
+<img src="docs/img/gbl.png" alt="Showing terminal output of running gbl command without flags" width="500"/>
+
+You can also delete multiple branches with `-d, --delete` (or force delete with `-D, --force-delete`).
+
+<img src="docs/img/gbl-delete.png" alt="Showing terminal output of running gbl command with delete flag" width="800"/>
 
 # Why
 I found myself switching between branches a lot, and I enjoy using the terminal. So I wanted to make my life just a bit easier.

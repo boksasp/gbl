@@ -13,26 +13,7 @@ go install github.com/boksasp/gbl@latest
 ## Using gbl
 In a directory containing a git repository, run `gbl` in the terminal to get a list of all the branches you have locally, and press 'enter' to select the one you want to checkout.
 
-```
-/code/myrepo$ gbl
-Search: █
-? Select branch to checkout:
-  > jira-1911
-    develop
-    feat-a
-    feat-b
-    master
-```
-
-Start typing to search for a branch
-
-```
-/code/myrepo$ gbl
-Search: fea█
-? Select branch to checkout:
-  > feat-a
-    feat-b
-```
+<img src="docs/img/gbl" alt="Showing terminal output of running gbl command without flags" width="200"/>
 
 # Why
 I found myself switching between branches a lot, and I enjoy using the terminal. So I wanted to make my life just a bit easier.

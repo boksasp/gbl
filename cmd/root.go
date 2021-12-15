@@ -42,7 +42,7 @@ func delete(branch string) error {
 
 func deletePrompt(branches []string) {
 	prompt := &survey.MultiSelect{
-		Message: "Which branch(es) do you want to delete?",
+		Message: "Select branch(es) to delete?",
 		Options: branches,
 	}
 	selected := []string{}
@@ -68,7 +68,7 @@ func deletePrompt(branches []string) {
 
 func checkoutPrompt(branches []string) {
 	prompt := &survey.Select{
-		Message: "Which branch do you want to checkout?",
+		Message: "Select branch to checkout?",
 		Options: branches,
 	}
 	var selected string

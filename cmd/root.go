@@ -1,34 +1,24 @@
-/*
-Copyright © 2021 Trond Boksasp <trond@hey.com>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 
 	survey "github.com/AlecAivazis/survey/v2"
-	"github.com/spf13/viper"
 )
 
-var cfgFile string
 var deleteBranch bool
 var forceDeleteBranch bool
+
+type Error struct {
+	Message string
+}
+
+func (r *Error) Error() string {
+	return r.Message
+}
 
 func delete(branch string) error {
 	_, err := gitBranchDelete(branch, forceDeleteBranch)
@@ -90,7 +80,7 @@ var rootCmd = &cobra.Command{
 	Use:   "gbl",
 	Short: "cli prompt for switching between local git branches",
 	Long: `gbl lists all branches in the current repo which you have locally.
-	Select which branch you want to check out with the arrow keys.	
+Select which branch you want to check out with the arrow keys.	
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.SetFlags(0)
@@ -123,32 +113,6 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	rootCmd.Flags().BoolVarP(&deleteBranch, "delete", "d", false, "Delete local branches (git branch -d <branch>)")
 	rootCmd.Flags().BoolVarP(&forceDeleteBranch, "force-delete", "D", false, "Force delete local branches (git branch -D <branch>)")
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
-		// Search config in home directory with name ".gbl" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".gbl")
-	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-	}
 }

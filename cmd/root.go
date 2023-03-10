@@ -32,7 +32,7 @@ func delete(branch string) error {
 
 func deletePrompt(branches []string) {
 	prompt := &survey.MultiSelect{
-		Message: "Select branch(es) to delete?",
+		Message: "Select branch(es) to delete",
 		Options: branches,
 	}
 	selected := []string{}
@@ -58,7 +58,7 @@ func deletePrompt(branches []string) {
 
 func checkoutPrompt(branches []string) {
 	prompt := &survey.Select{
-		Message: "Select branch to checkout?",
+		Message: "Select branch to checkout",
 		Options: branches,
 	}
 	var selected string
@@ -70,10 +70,84 @@ func checkoutPrompt(branches []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println(out)
+		if out != "" {
+			log.Println(out)
+		}
 	} else {
 		log.Println("No branch selected")
 	}
+}
+
+func addFilesPrompt(files []string) {
+	prompt := &survey.MultiSelect{
+		Message: "Select file(s) to add to index (stage)",
+		Options: files,
+	}
+	selected := []string{}
+	survey.AskOne(prompt, &selected)
+
+	if len(selected) > 0 {
+		out, err := gitAddFiles(selected)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if out != "" {
+			log.Println(out)
+		}
+	} else {
+		log.Println("No files selected")
+	}
+}
+
+func unstageFilesPrompt(files []string) {
+	prompt := &survey.MultiSelect{
+		Message: "Select file(s) to restore to index (unstage)",
+		Options: files,
+	}
+	selected := []string{}
+	survey.AskOne(prompt, &selected)
+
+	if len(selected) > 0 {
+		out, err := gitRemoveFiles(selected)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if out != "" {
+			log.Println(out)
+		}
+	} else {
+		log.Println("No files selected")
+	}
+}
+
+var addFilesCmd = &cobra.Command{
+	Use:   "add",
+	Short: "Add files",
+	Long:  `Add files to index (stage)`,
+	Run: func(cmd *cobra.Command, args []string) {
+		files, err := gitGetModifiedFiles()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		addFilesPrompt(files)
+
+	},
+}
+
+var removeFilesCmd = &cobra.Command{
+	Use:   "remove",
+	Short: "Remove files",
+	Long:  `Remove files from index (unstage)`,
+	Run: func(cmd *cobra.Command, args []string) {
+		files, err := gitGetStagedFiles()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		unstageFilesPrompt(files)
+
+	},
 }
 
 var rootCmd = &cobra.Command{
@@ -115,4 +189,5 @@ func Execute() {
 func init() {
 	rootCmd.Flags().BoolVarP(&deleteBranch, "delete", "d", false, "Delete local branches (git branch -d <branch>)")
 	rootCmd.Flags().BoolVarP(&forceDeleteBranch, "force-delete", "D", false, "Force delete local branches (git branch -D <branch>)")
+	rootCmd.AddCommand(addFilesCmd, removeFilesCmd)
 }

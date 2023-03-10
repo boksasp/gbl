@@ -5,6 +5,35 @@ import (
 	"strings"
 )
 
+type GitOutput struct {
+	Content []byte
+	Err     error
+}
+
+func (g *GitOutput) ToString() string {
+	return string(g.Content)
+}
+
+func (g *GitOutput) IsEmpty() bool {
+	return len(g.Content) == 0
+}
+
+func (g *GitOutput) Lines() []string {
+	if g.IsEmpty() {
+		return nil
+	}
+
+	var lines []string
+
+	for _, val := range strings.Split(g.ToString(), "\n") {
+		if val != "" {
+			lines = append(lines, val)
+		}
+	}
+
+	return lines
+}
+
 func gitBranchListShort() ([]string, error) {
 	output, err := exec.Command("git", "branch", "--list", "--format=\"%(refname:short)\"").CombinedOutput()
 
@@ -47,4 +76,42 @@ func gitCheckout(item string) (string, error) {
 		return "", &Error{Message: string(out)}
 	}
 	return string(out), nil
+}
+
+func gitAddFiles(files []string) (string, error) {
+	commandArgs := append([]string{"add"}, files...)
+	out, err := exec.Command("git", commandArgs...).CombinedOutput()
+	if err != nil {
+		return "", &Error{Message: string(out)}
+	}
+	return string(out), nil
+}
+
+func gitGetModifiedFiles() ([]string, error) {
+	var o GitOutput
+	o.Content, o.Err = exec.Command("git", "diff", "--name-only").CombinedOutput()
+	if o.Err != nil {
+		return nil, &Error{Message: o.ToString()}
+	}
+
+	return o.Lines(), nil
+}
+
+func gitRemoveFiles(files []string) (string, error) {
+	commandArgs := append([]string{"restore", "--staged"}, files...)
+	out, err := exec.Command("git", commandArgs...).CombinedOutput()
+	if err != nil {
+		return "", &Error{Message: string(out)}
+	}
+	return string(out), nil
+}
+
+func gitGetStagedFiles() ([]string, error) {
+	var o GitOutput
+	o.Content, o.Err = exec.Command("git", "diff", "--staged", "--name-only").CombinedOutput()
+	if o.Err != nil {
+		return nil, &Error{Message: o.ToString()}
+	}
+
+	return o.Lines(), nil
 }

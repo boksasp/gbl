@@ -94,7 +94,15 @@ func gitGetModifiedFiles() ([]string, error) {
 		return nil, &Error{Message: o.ToString()}
 	}
 
-	return o.Lines(), nil
+	// Remove lines with empty strings
+	var modifiedFiles []string
+	for _, line := range o.Lines() {
+		if line != "" {
+			modifiedFiles = append(modifiedFiles, line)
+		}
+	}
+
+	return modifiedFiles, nil
 }
 
 func gitRemoveFiles(files []string) (string, error) {
@@ -113,5 +121,13 @@ func gitGetStagedFiles() ([]string, error) {
 		return nil, &Error{Message: o.ToString()}
 	}
 
-	return o.Lines(), nil
+	// Remove lines with empty strings
+	var stagedfiles []string
+	for _, line := range o.Lines() {
+		if line != "" {
+			stagedfiles = append(stagedfiles, line)
+		}
+	}
+
+	return stagedfiles, nil
 }

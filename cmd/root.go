@@ -125,9 +125,15 @@ var addFilesCmd = &cobra.Command{
 	Short: "Add files",
 	Long:  `Add files to index (stage)`,
 	Run: func(cmd *cobra.Command, args []string) {
+		log.SetFlags(0)
 		files, err := gitGetModifiedFiles()
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if len(files) < 1 {
+			log.Print("No modified files")
+			return
 		}
 
 		addFilesPrompt(files)
@@ -140,9 +146,15 @@ var removeFilesCmd = &cobra.Command{
 	Short: "Remove files",
 	Long:  `Remove files from index (unstage)`,
 	Run: func(cmd *cobra.Command, args []string) {
+		log.SetFlags(0)
 		files, err := gitGetStagedFiles()
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if len(files) < 1 {
+			log.Print("No staged files")
+			return
 		}
 
 		unstageFilesPrompt(files)

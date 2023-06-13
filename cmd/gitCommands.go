@@ -35,7 +35,7 @@ func (g *GitOutput) Lines() []string {
 }
 
 func gitBranchListShort() ([]string, error) {
-	output, err := exec.Command("git", "branch", "--list", "--format=\"%(refname:short)\"").CombinedOutput()
+	output, err := gitCommand("branch", "--list", "--format=\"%(refname:short)\"")
 
 	if err != nil {
 		cmdError := &Error{Message: string(output)}
@@ -61,7 +61,7 @@ func gitBranchDelete(branch string, force bool) (string, error) {
 	if force {
 		deleteFlag = "-D"
 	}
-	out, err := exec.Command("git", "branch", deleteFlag, branch).CombinedOutput()
+	out, err := gitCommand("branch", deleteFlag, branch)
 	outputString := string(out)
 	if err != nil {
 		gitError := &Error{Message: outputString}
@@ -71,7 +71,7 @@ func gitBranchDelete(branch string, force bool) (string, error) {
 }
 
 func gitCheckout(item string) (string, error) {
-	out, err := exec.Command("git", "checkout", item).CombinedOutput()
+	out, err := gitCommand("checkout", item)
 	if err != nil {
 		return "", &Error{Message: string(out)}
 	}
@@ -80,54 +80,56 @@ func gitCheckout(item string) (string, error) {
 
 func gitAddFiles(files []string) (string, error) {
 	commandArgs := append([]string{"add"}, files...)
-	out, err := exec.Command("git", commandArgs...).CombinedOutput()
+	out, err := gitCommand(commandArgs...)
 	if err != nil {
 		return "", &Error{Message: string(out)}
 	}
 	return string(out), nil
-}
-
-func gitGetModifiedFiles() ([]string, error) {
-	var o GitOutput
-	o.Content, o.Err = exec.Command("git", "diff", "--name-only").CombinedOutput()
-	if o.Err != nil {
-		return nil, &Error{Message: o.ToString()}
-	}
-
-	// Remove lines with empty strings
-	var modifiedFiles []string
-	for _, line := range o.Lines() {
-		if line != "" {
-			modifiedFiles = append(modifiedFiles, line)
-		}
-	}
-
-	return modifiedFiles, nil
 }
 
 func gitRemoveFiles(files []string) (string, error) {
 	commandArgs := append([]string{"restore", "--staged"}, files...)
-	out, err := exec.Command("git", commandArgs...).CombinedOutput()
+	out, err := gitCommand(commandArgs...)
 	if err != nil {
 		return "", &Error{Message: string(out)}
 	}
 	return string(out), nil
 }
 
+func gitGetModifiedTrackedFiles() ([]string, error) {
+	return gitOutput("diff", "--name-only")
+}
+
+func gitGetModifiedFiles() ([]string, error) {
+	return gitOutput("ls-files", "--others", "--modified", "--exclude-standard")
+}
+
+func gitGetUntrackedFiles() ([]string, error) {
+	return gitOutput("ls-files", "--others", "--exclude-standard")
+}
+
 func gitGetStagedFiles() ([]string, error) {
+	return gitOutput("diff", "--staged", "--name-only")
+}
+
+func gitCommand(commands ...string) ([]byte, error) {
+	return exec.Command("git", commands...).CombinedOutput()
+}
+
+func gitOutput(args ...string) ([]string, error) {
 	var o GitOutput
-	o.Content, o.Err = exec.Command("git", "diff", "--staged", "--name-only").CombinedOutput()
+	o.Content, o.Err = gitCommand(args...)
 	if o.Err != nil {
 		return nil, &Error{Message: o.ToString()}
 	}
 
 	// Remove lines with empty strings
-	var stagedfiles []string
+	var files []string
 	for _, line := range o.Lines() {
 		if line != "" {
-			stagedfiles = append(stagedfiles, line)
+			files = append(files, line)
 		}
 	}
 
-	return stagedfiles, nil
+	return files, nil
 }

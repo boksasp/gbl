@@ -82,6 +82,8 @@ func addFilesPrompt(files []string) {
 	prompt := &survey.MultiSelect{
 		Message: "Select file(s) to add to index (stage)",
 		Options: files,
+		// TODO: Add Description when this change is released: https://github.com/go-survey/survey/issues/432
+		// Description should mark untracked files in the prompt
 	}
 	selected := []string{}
 	survey.AskOne(prompt, &selected)

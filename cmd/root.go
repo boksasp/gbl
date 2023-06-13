@@ -78,10 +78,18 @@ func checkoutPrompt(branches []string) {
 	}
 }
 
-func addFilesPrompt(files []string) {
+func addFilesPrompt(files []string, untracked []string) {
 	prompt := &survey.MultiSelect{
 		Message: "Select file(s) to add to index (stage)",
 		Options: files,
+		Description: func(value string, index int) string {
+			for _, v := range untracked {
+				if v == value {
+					return "untracked"
+				}
+			}
+			return ""
+		},
 		// TODO: Add Description when this change is released: https://github.com/go-survey/survey/issues/432
 		// Description should mark untracked files in the prompt
 	}
@@ -133,12 +141,17 @@ var addFilesCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
+		untracked, err := gitGetUntrackedFiles()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if len(files) < 1 {
 			log.Print("No modified files")
 			return
 		}
 
-		addFilesPrompt(files)
+		addFilesPrompt(files, untracked)
 
 	},
 }
